@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#if HAVE_CUDA && HAVE_CUDA_CTX_SYNC_MEMOPS
+#if HAVE_CUDA
 #include <cuda.h>
 #endif
 
@@ -70,6 +70,15 @@ struct dlist_entry;
 	  (CUdevice dev, unsigned int flags), (dev, flags))
 #else
 #define EFA_MOCK_FUNCTIONS_CUDA_CTX_SYNC_MEMOPS(X)
+#endif
+
+#if HAVE_CUDA
+#define EFA_MOCK_FUNCTIONS_CUDA_POINTER(X)                                    \
+	X(CUresult, ofi_cuPointerGetAttribute,                                \
+	  (void *data, CUpointer_attribute attribute, CUdeviceptr ptr),       \
+	  (data, attribute, ptr))
+#else
+#define EFA_MOCK_FUNCTIONS_CUDA_POINTER(X)
 #endif
 
 #define EFA_MOCK_FUNCTIONS(X)                                                  \
@@ -204,7 +213,8 @@ struct dlist_entry;
 	  (hmem_iface, device, hmem_iov, hmem_iov_count, hmem_iov_offset, src, \
 	   size))                                                              \
 	EFA_MOCK_FUNCTIONS_QUERY_QP_WQS(X)                                    \
-	EFA_MOCK_FUNCTIONS_CUDA_CTX_SYNC_MEMOPS(X)
+	EFA_MOCK_FUNCTIONS_CUDA_CTX_SYNC_MEMOPS(X)                            \
+	EFA_MOCK_FUNCTIONS_CUDA_POINTER(X)
 
 /* --- Generator macros --- */
 
