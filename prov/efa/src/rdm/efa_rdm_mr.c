@@ -306,6 +306,7 @@ int efa_rdm_mr_update_domain_mr_map(struct efa_rdm_mr *efa_rdm_mr, struct fi_mr_
 {
 	struct fid_mr *existing_mr_fid;
 	struct efa_mr *existing_mr;
+	struct efa_rdm_mr *existing_rdm_mr;
 	bool cuda_memory_freed;
 	int err;
 	struct efa_mr *efa_mr = &efa_rdm_mr->efa_mr;
@@ -366,7 +367,22 @@ int efa_rdm_mr_update_domain_mr_map(struct efa_rdm_mr *efa_rdm_mr, struct fi_mr_
 		return -FI_ENOKEY;
 	}
 
-	err = efa_rdm_mr_is_cuda_memory_freed((struct efa_rdm_mr *)existing_mr, &cuda_memory_freed);
+	/* The recovery below needs the MR cache entry, which holds the CUDA buffer
+	 * ID and removes the stale region. The MR cache only holds system memory
+	 * (see efa_rdm_mr_cache_entry_reg()), so a CUDA MR is never cache-owned:
+	 * its entry is NULL and its key cannot be reclaimed here.
+	 */
+	existing_rdm_mr = container_of(existing_mr, struct efa_rdm_mr, efa_mr);
+	if (!existing_rdm_mr->entry) {
+		EFA_WARN(FI_LOG_DOMAIN, "key %ld already assigned to cuda buffer: %p length: %ld, "
+			 "which is not in the MR cache\n",
+			 existing_mr->mr_fid.key,
+			 existing_mr->ibv_mr->addr,
+			 existing_mr->ibv_mr->length);
+		return -FI_ENOKEY;
+	}
+
+	err = efa_rdm_mr_is_cuda_memory_freed(existing_rdm_mr, &cuda_memory_freed);
 	if (err)
 		return err;
 
