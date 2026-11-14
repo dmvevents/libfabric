@@ -549,6 +549,18 @@ ssize_t efa_rdm_pke_copy_payload_to_ope(struct efa_rdm_pke *pke,
 	if (efa_mr_is_neuron(desc))
 		return efa_rdm_rxe_post_local_read_or_queue(ope, segment_offset, pke, pke->payload, pke->payload_size);
 
+	/* Only a local read gives in-order aligned 128-byte delivery. */
+	if (ep->sendrecv_in_order_aligned_128_bytes) {
+		if (efa_rdm_ep_use_p2p_for_mr(ep, desc) <= 0) {
+			EFA_WARN(FI_LOG_CQ, "In-order aligned 128-byte delivery needs a local read, "
+				"which is not available for this %s receive buffer\n",
+				fi_tostr(&desc->iface, FI_TYPE_HMEM_IFACE));
+			efa_rdm_pke_release_rx(pke);
+			return -FI_EINVAL;
+		}
+		return efa_rdm_rxe_post_local_read_or_queue(ope, segment_offset, pke, pke->payload, pke->payload_size);
+	}
+
 	if (efa_mr_is_hmem(desc))
 		return efa_rdm_pke_queued_copy_payload_to_hmem(pke, ope);
 

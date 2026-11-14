@@ -2007,6 +2007,12 @@ static int efa_rdm_ep_setopt(fid_t fid, int level, int optname,
 	case FI_OPT_EFA_USE_DEVICE_RDMA:
 		if (optlen != sizeof(bool))
 			return -FI_EINVAL;
+		/* In-order aligned send/recv copies data with RDMA read */
+		if (!*(bool *)optval && efa_rdm_ep->sendrecv_in_order_aligned_128_bytes) {
+			EFA_WARN(FI_LOG_EP_CTRL,
+				"FI_OPT_EFA_USE_DEVICE_RDMA cannot be disabled while FI_OPT_EFA_SENDRECV_IN_ORDER_ALIGNED_128_BYTES is set\n");
+			return -FI_EOPNOTSUPP;
+		}
 		ret = efa_rdm_ep_set_use_device_rdma(efa_rdm_ep, *(bool *)optval);
 		if (ret)
 			return ret;
@@ -2014,13 +2020,27 @@ static int efa_rdm_ep_setopt(fid_t fid, int level, int optname,
 	case FI_OPT_EFA_SENDRECV_IN_ORDER_ALIGNED_128_BYTES:
 		if (optlen != sizeof(bool))
 			return -FI_EINVAL;
-		/**
-		 * TODO: support this option after we fix the data copy atomicity
-		 * for general memory types of rx buffer
+		/*
+		 * Data is copied from the bounce buffer to the application
+		 * buffer with a local RDMA read for every memory type of the
+		 * receive buffer, so the endpoint needs RDMA read and the read
+		 * copy packet pool. The local read does not account for a
+		 * message prefix.
 		 */
-		EFA_WARN(FI_LOG_EP_CTRL,
-			"FI_OPT_EFA_SENDRECV_IN_ORDER_ALIGNED_128_BYTES is currently not supported\n");
-		return -FI_EOPNOTSUPP;
+		if (*(bool *)optval) {
+			if (!efa_rdm_ep_support_rdma_read(efa_rdm_ep) ||
+			    !efa_rdm_ep->rx_readcopy_pkt_pool ||
+			    efa_rdm_ep->msg_prefix_size) {
+				EFA_WARN(FI_LOG_EP_CTRL,
+					"FI_OPT_EFA_SENDRECV_IN_ORDER_ALIGNED_128_BYTES requires RDMA read, the read copy packet pool and no FI_MSG_PREFIX\n");
+				return -FI_EOPNOTSUPP;
+			}
+			ret = efa_base_ep_check_qp_in_order_aligned_128_bytes(&efa_rdm_ep->base_ep, IBV_WR_RDMA_READ);
+			if (ret)
+				return ret;
+		}
+		efa_rdm_ep->sendrecv_in_order_aligned_128_bytes = *(bool *)optval;
+		break;
 	case FI_OPT_EFA_WRITE_IN_ORDER_ALIGNED_128_BYTES:
 		if (optlen != sizeof(bool))
 			return -FI_EINVAL;

@@ -675,6 +675,12 @@ registration by virtual address works with every EFA device.
   aligned block being sent and received in order, it will also guarantee data
   to be delivered to the receive buffer only once. If endpoint is not able to
   support this feature, it will return -FI_EOPNOTSUPP for the call to fi_setopt().
+  On the efa fabric, received data is copied to the receive buffer with a local
+  RDMA read for every memory type, except for peers reached through shared
+  memory (see FI_OPT_SHARED_MEMORY_PERMITTED). The option needs device RDMA read
+  support, the read copy packet pool (FI_MR_HMEM, with FI_EFA_RX_COPY_UNEXP or
+  FI_EFA_RX_COPY_OOO) and no FI_MSG_PREFIX, and FI_OPT_EFA_USE_DEVICE_RDMA
+  cannot be disabled while it is set.
 
 
 *FI_OPT_EFA_WRITE_IN_ORDER_ALIGNED_128_BYTES - bool*
