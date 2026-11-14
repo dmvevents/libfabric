@@ -34,6 +34,7 @@ struct efa_ah;
 struct efa_device;
 struct efa_rdm_ep;
 struct efa_rdm_ope;
+struct efa_base_ep;
 struct dlist_entry;
 
 /*
@@ -128,6 +129,13 @@ struct dlist_entry;
 	  (struct ofi_mr_map * map, const struct fi_mr_attr *attr,             \
 	   uint64_t *key, void *context, uint64_t flags),                      \
 	  (map, attr, key, context, flags))                                    \
+	X(int, efa_rdm_rxe_post_local_read_or_queue,                           \
+	  (struct efa_rdm_ope * rxe, size_t rx_data_offset,                    \
+	   struct efa_rdm_pke * pkt_entry, char *pkt_data, size_t data_size),  \
+	  (rxe, rx_data_offset, pkt_entry, pkt_data, data_size))               \
+	X(int, efa_base_ep_check_qp_in_order_aligned_128_bytes,                \
+	  (struct efa_base_ep * ep, enum ibv_wr_opcode op_code),               \
+	  (ep, op_code))                                                       \
 	X(int, efa_device_read_random,                                         \
 	  (struct efa_device * device, void *buf, size_t len),                 \
 	  (device, buf, len))                                                  \

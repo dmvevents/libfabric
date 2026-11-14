@@ -338,6 +338,8 @@ nodist_prov_efa_test_gtest_efa_gtest_SOURCES = \
 	prov/efa/test/gtest/efa_gtest_reverse_av_utils.c \
 	prov/efa/test/gtest/efa_gtest_rdm_pke_rtm.cc \
 	prov/efa/test/gtest/efa_gtest_rdm_mr.cc \
+	prov/efa/test/gtest/efa_gtest_rdm_aligned128_utils.c \
+	prov/efa/test/gtest/efa_gtest_rdm_aligned128.cc \
 	prov/efa/test/gtest/efa_gtest_rdm_pke.cc \
 	prov/efa/test/gtest/efa_gtest_rdm_ope_helpers.c \
 	prov/efa/test/gtest/efa_gtest_rdm_ope.cc \
@@ -395,6 +397,8 @@ prov_efa_test_gtest_efa_gtest_LDFLAGS = \
 	-Wl,--wrap=efadv_query_ah \
 	-Wl,--wrap=efa_av_reverse_av_add \
 	-Wl,--wrap=ofi_mr_map_insert \
+	-Wl,--wrap=efa_rdm_rxe_post_local_read_or_queue \
+	-Wl,--wrap=efa_base_ep_check_qp_in_order_aligned_128_bytes \
 	-Wl,--wrap=efa_device_read_random \
 	-Wl,--wrap=cuda_set_sync_memops \
 	-Wl,--wrap=ofi_cuDevicePrimaryCtxGetState \
